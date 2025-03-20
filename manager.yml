@@ -1,0 +1,8 @@
+address: :9080
+database:
+  mongodb: mongodb://192.168.82.87:22019
+authentication:
+  secret: AES256-Druid-heifeng-huteng-1234
+log:
+  level: info
+  path: ""
