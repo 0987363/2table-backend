@@ -1,8 +1,18 @@
 address: :9080
 database:
-  mongodb: mongodb://192.168.82.87:22019
+  type: local # 或 mongodb
+  address: ./data
 authentication:
   secret: AES256-Druid-heifeng-huteng-1234
 log:
   level: info
-  path: ""
+
+storage:
+  type: local # 或 s3
+  local_config:
+    path: /data/file # 本地模式使用
+
+  #s3_config:
+   # bucket: "my-app-bucket"
+   # region: "us-west-1"
+   # endpoint: "s3.amazonaws.com"
