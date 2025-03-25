@@ -2,10 +2,8 @@ address: :8080
 database:
   type: local # 或 mongodb
   address: ./db
-authentication:
-  secret: AES256-Druid-heifeng-huteng-1234
 log:
-  level: debug
+  level: info
 
 storage:
   type: local # 或 s3

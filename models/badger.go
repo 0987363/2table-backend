@@ -18,14 +18,15 @@ type Badger struct {
 }
 
 func NewBadger(dataPath string) (*Badger, error) {
-	opt := badger.DefaultOptions(dataPath)
-	opt.IndexCacheSize = 100 << 20
+	opts := badger.DefaultOptions(dataPath)
+	opts.IndexCacheSize = 10 << 20    // 10MB
+	opts.ValueLogFileSize = 128 << 20 // 128MB
 
 	if err := os.MkdirAll(dataPath, 0755); err != nil {
 		return nil, Error("Create badger dirctory failed: ", err)
 	}
 
-	db, err := badger.Open(opt)
+	db, err := badger.Open(opts)
 	if err != nil {
 		return nil, Error("Open badger failed: ", err)
 	}
