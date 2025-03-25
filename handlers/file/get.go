@@ -2,7 +2,8 @@ package file
 
 import (
 	"context"
-	"mime"
+	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/0987363/2table-backend/middleware"
@@ -18,22 +19,29 @@ func Get(c *gin.Context) {
 	file := models.File{}
 	db := middleware.GetDB(c)
 	if err := db.Get(models.FileCollection, fileID, &file); err != nil {
-		logger.Errorf("Find file by id:%s failed:%v", fileID, err)
+		logger.Errorf("Get file by id:%s failed:%v", fileID, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
 	storage := middleware.GetStorage(c)
-	data, err := storage.ReadAll(context.Background(), file.Path)
+	reader, err := storage.NewReader(context.Background(), file.ID, nil)
 	if err != nil {
-		logger.Errorf("Read file by path:%s failed:%s", file.Path, err)
+		logger.Errorf("Init reader failed:%v", err)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+	defer reader.Close()
+
+	c.Header("Content-Type", reader.ContentType())
+	c.Header("Content-Length", fmt.Sprintf("%d", file.Size))
+	c.Header("Accept-Ranges", "bytes")
+
+	if _, err = io.CopyBuffer(c.Writer, reader, make([]byte, 64<<10)); err != nil {
+		logger.Error("Download failed:", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	contentType := mime.TypeByExtension(file.Type)
-	if contentType == "" {
-		contentType = "application/octet-stream" // 默认二进制流
-	}
-	c.Data(http.StatusOK, contentType, data)
+	c.Status(http.StatusOK)
 }

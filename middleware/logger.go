@@ -1,24 +1,16 @@
 package middleware
 
 import (
-	"io/ioutil"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"github.com/0987363/2table-backend/models"
 
-	"net"
 	"net/url"
 	"time"
 )
 
-const (
-	loggerStoreElk = "elk" //elk
-)
-
 var (
-	logConn  net.Conn //elk
 	logLevel string
 	logStore string //日志存储地方
 	host     string
@@ -30,7 +22,6 @@ func LoggerInit() *logrus.Logger {
 
 	logger.Level = models.ConvertLevel(logLevel)
 	logger.Formatter = &logrus.TextFormatter{ForceColors: true, FullTimestamp: true, TimestampFormat: time.RFC3339Nano}
-	logger.Out = ioutil.Discard
 
 	return logger
 }
@@ -83,14 +74,5 @@ func GetLogger(c *gin.Context) *logrus.Entry {
 func SetLoggerField(c *gin.Context, k, v string) {
 	if logger, ok := c.Get(models.MiddwareKeyLogger); ok {
 		c.Set(models.MiddwareKeyLogger, logger.(*logrus.Entry).WithField(k, v))
-	}
-}
-
-// 公共Filed提取出来供不同客户端使用
-func GetLoggerCommonFields() logrus.Fields {
-	//host, _ := os.Hostname()
-	return logrus.Fields{
-		"Type":    "bird",
-		"Service": "manager",
 	}
 }

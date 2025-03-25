@@ -2,63 +2,90 @@ package file
 
 import (
 	"context"
+	"io"
 	"mime/multipart"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/0987363/2table-backend/middleware"
 	"github.com/0987363/2table-backend/models"
 
-	"github.com/gin-gonic/gin"
-
-	"io/ioutil"
-	"net/http"
-
-	"strings"
+	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/fileblob"
 )
 
-func uploadValidate(c *gin.Context) *multipart.FileHeader {
-	f, err := c.FormFile("file")
+func uploadValidate(c *gin.Context) (*multipart.Reader, error) {
+	reader, err := c.Request.MultipartReader()
 	if err != nil {
-		c.AbortWithError(http.StatusForbidden, models.Error("Read data from form failed.", err))
-		return nil
+		return nil, err
 	}
 
-	return f
+	return reader, nil
 }
 
 func Upload(c *gin.Context) {
 	logger := middleware.GetLogger(c)
 
-	f := uploadValidate(c)
-	if f == nil {
-		return
-	}
-
-	fileName := strings.TrimSpace(f.Filename)
-	if fileName == "" {
-		logger.Error("Clould not load file name.")
+	reader, err := uploadValidate(c)
+	if err != nil {
+		logger.Error("Parse multipart failed:", err)
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	fd, _ := f.Open()
-	data, _ := ioutil.ReadAll(fd)
-	defer fd.Close()
-
-	file := models.NewFile(fileName, data)
-
-	db := middleware.GetDB(c)
-	if err := db.Insert(models.FileCollection, file.ID, file); err != nil {
-		logger.Error("Save file meta failed.", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
-	}
-
 	storage := middleware.GetStorage(c)
-	if err := storage.WriteAll(context.Background(), file.Path, data, nil); err != nil {
-		logger.Error("Save file failed.", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
+	db := middleware.GetDB(c)
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if part.FileName() == "" {
+			continue
+		}
+
+		file, err := models.NewFile(db, part.FileName())
+		if err != nil {
+			logger.Error("Init file failed:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		opts := &blob.WriterOptions{ContentType: "application/octet-stream"}
+		writer, err := storage.NewWriter(context.Background(), file.Path, opts)
+		if err != nil {
+			logger.Error("Init writer failed:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		bytesCopied, err := io.CopyBuffer(writer, part, make([]byte, 64<<10))
+		if err != nil {
+			writer.Close()
+
+			logger.Error("Upload failed:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+		if err := writer.Close(); err != nil {
+			logger.Error("Close writer failed:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		file.Size = bytesCopied
+		file.Status = models.FileStatusFinished
+		if err := db.Insert(models.FileCollection, file.ID, file); err != nil {
+			logger.Error("Update file status failed:", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
+
+		c.JSON(http.StatusCreated, file)
 		return
 	}
 
-	c.JSON(http.StatusCreated, file)
+	c.AbortWithStatus(http.StatusBadRequest)
 }

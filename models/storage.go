@@ -2,11 +2,9 @@ package models
 
 import (
 	"context"
-	"errors"
 
 	"gocloud.dev/blob"
-	//	_ "gocloud.dev/blob/awsblob"
-	// _ "gocloud.dev/blob/fileblob"
+	_ "gocloud.dev/blob/fileblob"
 )
 
 // 存储类型常量
@@ -36,19 +34,7 @@ type S3Config struct {
 	Endpoint string `json:"endpoint,omitempty" yaml:"endpoint,omitempty"` // 兼容S3服务地址
 }
 
-func NewStorageManager(ctx context.Context, cfg *StorageConfig) (*StorageManager, error) {
-	var bucketURL string
-	var err error
-
-	switch cfg.Type {
-	case StorageTypeLocal:
-		bucketURL = "file://" + cfg.Local.Path
-	case StorageTypeS3:
-		bucketURL = buildS3URL(cfg.S3)
-	default:
-		return nil, errors.New("unsupported storage type")
-	}
-
+func NewStorageManager(ctx context.Context, bucketURL string) (*StorageManager, error) {
 	bucket, err := blob.OpenBucket(ctx, bucketURL)
 	if err != nil {
 		return nil, err
@@ -57,7 +43,7 @@ func NewStorageManager(ctx context.Context, cfg *StorageConfig) (*StorageManager
 	return &StorageManager{bucket}, nil
 }
 
-func buildS3URL(cfg *S3Config) string {
+func BuildS3URL(cfg *S3Config) string {
 	url := "s3://" + cfg.Bucket + "?"
 	if cfg.Region != "" {
 		url += "region=" + cfg.Region + "&"

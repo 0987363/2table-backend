@@ -1,18 +1,21 @@
-address: :9080
+address: :8080
 database:
   type: local # 或 mongodb
-  address: ./data
+  address: ./db
 authentication:
   secret: AES256-Druid-heifeng-huteng-1234
 log:
-  level: info
+  level: debug
 
 storage:
   type: local # 或 s3
+  skip_attr: true
   local_config:
-    path: /data/file # 本地模式使用
+    path: ./upload
+    temp: ./upload/temp
 
   #s3_config:
    # bucket: "my-app-bucket"
    # region: "us-west-1"
    # endpoint: "s3.amazonaws.com"
+   #

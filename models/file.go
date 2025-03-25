@@ -20,27 +20,38 @@ const (
 	TypeImage
 )
 
+const (
+	FileStatusUploading = iota
+	FileStatusFinished
+	FileStatusFailed
+)
+
 type File struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Path string `json:"path"`
-	Size int    `json:"size"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status int    `json:"status"`
+	Type   string `json:"type"`
+	Path   string `json:"path"`
+	Size   int64  `json:"size"`
 }
 
-func NewFile(name string, data []byte) *File {
+func NewFile(db DB, name string) (*File, error) {
 	id := GetID()
 	ext := GetFileExtension(name)
 
-	file := File{
-		ID:   id,
-		Name: name,
-		Type: ext,
-		Path: fmt.Sprintf("%s.%s", id, ext),
-		Size: len(data),
+	file := &File{
+		ID:     id,
+		Name:   name,
+		Status: FileStatusUploading,
+		Type:   ext,
+		Path:   fmt.Sprintf("%s.%s", id, ext),
 	}
 
-	return &file
+	if err := db.Insert(FileCollection, file.ID, file); err != nil {
+		return nil, err
+	}
+
+	return file, nil
 }
 
 func DetectContentType(data []byte) FileType {
