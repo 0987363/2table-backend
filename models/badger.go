@@ -9,8 +9,13 @@ import (
 	"github.com/dgraph-io/badger/v4"
 )
 
-func CreateKey(prefix string, id string) string {
-	return fmt.Sprintf("%s%s", prefix, id)
+const (
+	FileCollection = "file"
+	UserCollection = "user"
+)
+
+func GenKey(collection, id string) string {
+	return fmt.Sprintf("%s:%s", collection, id)
 }
 
 type Badger struct {
@@ -34,19 +39,39 @@ func NewBadger(dataPath string) (*Badger, error) {
 	return &Badger{db}, nil
 }
 
-func (m *Badger) Insert(collection, key string, data interface{}) error {
+func (m *Badger) InsertFile(collection, key string, data *File) error {
 	return m.db.Update(func(txn *badger.Txn) error {
 		bytes, err := json.Marshal(data)
 		if err != nil {
 			return err
 		}
-		return txn.Set([]byte(key), bytes)
+		return txn.Set([]byte(GenKey(collection, key)), bytes)
 	})
 }
 
-func (m *Badger) Get(collection, key string, result interface{}) error {
+func (m *Badger) ListFile(collection string, result []*File) error {
 	return m.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(key))
+		it := txn.NewIterator(badger.DefaultIteratorOptions)
+		defer it.Close()
+		prefix := []byte(collection)
+
+		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+			res := File{}
+			item := it.Item()
+			if err := item.Value(func(val []byte) error {
+				return json.Unmarshal(val, &res)
+			}); err != nil {
+				return err
+			}
+			result = append(result, &res)
+		}
+		return nil
+	})
+}
+
+func (m *Badger) GetFile(collection, key string, result *File) error {
+	return m.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(GenKey(collection, key)))
 		if err != nil {
 			return err
 		}
