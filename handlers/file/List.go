@@ -13,7 +13,7 @@ func List(c *gin.Context) {
 
 	db := middleware.GetDB(c)
 	results := []*models.File{}
-	if err := db.ListFile(models.FileCollection, results); err != nil {
+	if err := db.ListFile(models.FileCollection, &results); err != nil {
 		logger.Error("List files failed:", err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

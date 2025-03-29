@@ -4,4 +4,6 @@ __pycache__
 *.swo
 /db
 /upload
+/storage
 2table-backend
+config.yml

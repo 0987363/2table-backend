@@ -56,9 +56,11 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/montanaflynn/stats v0.7.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
+	github.com/phpdave11/gofpdi v1.0.14-0.20211212211723-1f10f9844311 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/robfig/go-cache v0.0.0-20130306151617-9fc39e0dbf62 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
+	github.com/signintech/gopdf v0.31.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect

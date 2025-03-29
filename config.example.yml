@@ -16,4 +16,8 @@ storage:
    # bucket: "my-app-bucket"
    # region: "us-west-1"
    # endpoint: "s3.amazonaws.com"
-   #
+
+ocr:
+  minuer:
+    token: xxx
+    address: https://mineru.net/api

@@ -45,11 +45,11 @@ func (m *Badger) InsertFile(collection, key string, data *File) error {
 		if err != nil {
 			return err
 		}
-		return txn.Set([]byte(key), bytes)
+		return txn.Set([]byte(GenKey(collection, key)), bytes)
 	})
 }
 
-func (m *Badger) ListFile(collection string, result []*File) error {
+func (m *Badger) ListFile(collection string, result *[]*File) error {
 	return m.db.View(func(txn *badger.Txn) error {
 		it := txn.NewIterator(badger.DefaultIteratorOptions)
 		defer it.Close()
@@ -58,12 +58,34 @@ func (m *Badger) ListFile(collection string, result []*File) error {
 		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 			res := File{}
 			item := it.Item()
+			fmt.Println("key: ", string(item.Key()))
 			if err := item.Value(func(val []byte) error {
 				return json.Unmarshal(val, &res)
 			}); err != nil {
 				return err
 			}
-			result = append(result, &res)
+			*result = append(*result, &res)
+		}
+		return nil
+	})
+}
+
+func (m *Badger) ListAll(collection string, result *[]*File) error {
+	return m.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		for it.Seek(nil); it.Valid(); it.Next() {
+			res := File{}
+			item := it.Item()
+			if err := item.Value(func(val []byte) error {
+				return json.Unmarshal(val, &res)
+			}); err != nil {
+				return err
+			}
+			*result = append(*result, &res)
 		}
 		return nil
 	})
@@ -79,6 +101,15 @@ func (m *Badger) GetFile(collection, key string, result *File) error {
 		return item.Value(func(val []byte) error {
 			return json.Unmarshal(val, result)
 		})
+	})
+}
+
+func (m *Badger) DeleteFile(collection, key string) error {
+	return m.db.Update(func(txn *badger.Txn) error {
+		if err := txn.Delete([]byte(GenKey(collection, key))); err != nil {
+			return err
+		}
+		return nil
 	})
 }
 

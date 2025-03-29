@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"github.com/0987363/2table-backend/handlers/convert"
 	"github.com/0987363/2table-backend/handlers/file"
 	"github.com/0987363/2table-backend/middleware"
 	"github.com/0987363/2table-backend/models"
@@ -33,6 +34,13 @@ func init() {
 			fileMux.GET("/", file.List)
 
 			fileMux.POST("/", file.Upload)
+
+			fileMux.DELETE("/id/:id", file.Delete)
+		}
+
+		convertMux := v1Mux.Group("/convert")
+		{
+			convertMux.PUT("/file/:id/pdf", convert.PDF)
 		}
 	}
 }

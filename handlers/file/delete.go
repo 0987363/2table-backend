@@ -2,16 +2,17 @@ package file
 
 import (
 	"context"
-	"fmt"
-	"io"
+	"errors"
 	"net/http"
+	"os"
 
 	"github.com/0987363/2table-backend/middleware"
 	"github.com/0987363/2table-backend/models"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/gin-gonic/gin"
 )
 
-func Get(c *gin.Context) {
+func Delete(c *gin.Context) {
 	logger := middleware.GetLogger(c)
 
 	fileID := c.Param("id")
@@ -19,29 +20,30 @@ func Get(c *gin.Context) {
 	file := models.File{}
 	db := middleware.GetDB(c)
 	if err := db.GetFile(models.FileCollection, fileID, &file); err != nil {
+		if errors.Is(err, badger.ErrKeyNotFound) {
+			c.Status(http.StatusNoContent)
+			return
+		}
+
 		logger.Errorf("Get file by id:%s failed:%v", fileID, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
 	storage := middleware.GetStorage(c)
-	reader, err := storage.NewReader(context.Background(), file.Path, nil)
-	if err != nil {
-		logger.Errorf("Init reader failed:%v", err)
-		c.AbortWithStatus(http.StatusInternalServerError)
-		return
+	if err := storage.Delete(context.Background(), file.Path); err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			logger.Errorf("Delete storage failed:%v", err)
+			c.AbortWithStatus(http.StatusInternalServerError)
+			return
+		}
 	}
-	defer reader.Close()
 
-	c.Header("Content-Type", reader.ContentType())
-	c.Header("Content-Length", fmt.Sprintf("%d", file.Size))
-	c.Header("Accept-Ranges", "bytes")
-
-	if _, err = io.CopyBuffer(c.Writer, reader, make([]byte, 64<<10)); err != nil {
-		logger.Error("Download failed:", err)
+	if err := db.DeleteFile(models.FileCollection, fileID); err != nil {
+		logger.Errorf("Delete file by id:%s failed:%v", fileID, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }

@@ -27,12 +27,13 @@ const (
 )
 
 type File struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	Status int    `json:"status"`
-	Type   string `json:"type"`
-	Path   string `json:"path"`
-	Size   int64  `json:"size"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Status  int    `json:"status"`
+	Type    string `json:"type"`
+	Size    int64  `json:"size"`
+	Path    string `json:"path"`
+	PDFPath string `json:"pdf_path"`
 }
 
 func NewFile(db *Badger, name string) (*File, error) {
