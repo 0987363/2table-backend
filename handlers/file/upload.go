@@ -77,7 +77,7 @@ func Upload(c *gin.Context) {
 
 		file.Size = bytesCopied
 		file.Status = models.FileStatusFinished
-		if err := db.Insert(models.FileCollection, file.ID, file); err != nil {
+		if err := db.InsertFile(models.FileCollection, file.ID, file); err != nil {
 			logger.Error("Update file status failed:", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return

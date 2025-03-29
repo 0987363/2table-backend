@@ -7,7 +7,7 @@ import (
 
 const dbKey = "Db"
 
-var db models.DB
+var db *models.Badger
 
 func ConnectDB(dataPath string) (err error) {
 	db, err = models.NewBadger(dataPath)
@@ -21,6 +21,6 @@ func DbConnector() gin.HandlerFunc {
 	}
 }
 
-func GetDB(c *gin.Context) models.DB {
-	return c.MustGet(dbKey).(models.DB)
+func GetDB(c *gin.Context) *models.Badger {
+	return c.MustGet(dbKey).(*models.Badger)
 }

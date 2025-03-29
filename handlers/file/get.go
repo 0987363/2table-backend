@@ -18,7 +18,7 @@ func Get(c *gin.Context) {
 
 	file := models.File{}
 	db := middleware.GetDB(c)
-	if err := db.Get(models.FileCollection, fileID, &file); err != nil {
+	if err := db.GetFile(models.FileCollection, fileID, &file); err != nil {
 		logger.Errorf("Get file by id:%s failed:%v", fileID, err)
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return

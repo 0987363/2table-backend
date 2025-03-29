@@ -1,7 +1,7 @@
 __pycache__
+.DS_Store
 *.swp
 *.swo
-.DS_Store
 /db
 /upload
 2table-backend

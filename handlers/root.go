@@ -30,6 +30,7 @@ func init() {
 		fileMux := v1Mux.Group("/file")
 		{
 			fileMux.GET("/id/:id", file.Get)
+			fileMux.GET("/", file.List)
 
 			fileMux.POST("/", file.Upload)
 		}

@@ -35,7 +35,7 @@ type File struct {
 	Size   int64  `json:"size"`
 }
 
-func NewFile(db DB, name string) (*File, error) {
+func NewFile(db *Badger, name string) (*File, error) {
 	id := GetID()
 	ext := GetFileExtension(name)
 
@@ -47,7 +47,7 @@ func NewFile(db DB, name string) (*File, error) {
 		Path:   fmt.Sprintf("%s.%s", id, ext),
 	}
 
-	if err := db.Insert(FileCollection, file.ID, file); err != nil {
+	if err := db.InsertFile(FileCollection, file.ID, file); err != nil {
 		return nil, err
 	}
 
