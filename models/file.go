@@ -1,11 +1,15 @@
 package models
 
 import (
+	"context"
 	"fmt"
+	"image"
 	"mime"
 	"net/http"
 	"path/filepath"
 	"strings"
+
+	"gocloud.dev/blob"
 )
 
 const (
@@ -81,4 +85,32 @@ func GetFileExtension(filename string) string {
 		return strings.ToLower(ext[1:])
 	}
 	return ""
+}
+
+func (file *File) ConvertPDF(storage *StorageManager) error {
+	reader, err := storage.NewReader(context.Background(), file.Path, nil)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	m, _, err := image.Decode(reader)
+	if err != nil {
+		return err
+	}
+
+	file.PDFPath = fmt.Sprintf("%s.pdf", file.ID)
+	opts := &blob.WriterOptions{ContentType: "application/pdf"}
+	writer, err := storage.NewWriter(context.Background(), file.PDFPath, opts)
+	if err != nil {
+		return err
+	}
+	if err := Image2Pdf(m, writer); err != nil {
+		return err
+	}
+	if err := writer.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }

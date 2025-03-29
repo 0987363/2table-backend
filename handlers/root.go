@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/0987363/2table-backend/handlers/convert"
 	"github.com/0987363/2table-backend/handlers/file"
+	"github.com/0987363/2table-backend/handlers/ocr/mineru"
 	"github.com/0987363/2table-backend/middleware"
 	"github.com/0987363/2table-backend/models"
 
@@ -41,6 +42,11 @@ func init() {
 		convertMux := v1Mux.Group("/convert")
 		{
 			convertMux.PUT("/file/:id/pdf", convert.PDF)
+		}
+
+		mineruMux := v1Mux.Group("/mineru")
+		{
+			mineruMux.POST("/file/:id", mineru.Create)
 		}
 	}
 }
